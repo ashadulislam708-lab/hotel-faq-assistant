@@ -23,9 +23,18 @@ def get_connection():
 
 def init_schema():
     """Create the vector extension and the faq_chunks table if they don't exist."""
-    with get_connection() as conn:
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set")
+
+    # The vector extension must exist before register_vector() can run, so this
+    # first connection is deliberately plain (not get_connection()).
+    with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        conn.commit()
+
+    with get_connection() as conn:
+        with conn.cursor() as cur:
             cur.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS faq_chunks (

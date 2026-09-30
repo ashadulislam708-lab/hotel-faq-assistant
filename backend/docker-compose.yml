@@ -23,6 +23,23 @@ services:
       - ./.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    command: python ingest.py
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+  app:
+    build: .
+    container_name: hotel-faq-app
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    command: streamlit run app.py --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
     depends_on:
       db:
         condition: service_healthy

@@ -82,7 +82,21 @@ psql -d your_database -c "CREATE EXTENSION IF NOT EXISTS vector;"
 python ingest.py
 ```
 
-The frontend (and how the backend is served to it) is being designed separately and isn't part of this repo yet.
+Ask a question:
+
+```bash
+python ask.py "What time is check-in?"   # CLI
+streamlit run app.py                      # chat UI at http://localhost:8501
+```
+
+With Docker:
+
+```bash
+cd backend
+docker compose up -d db
+docker compose run --rm backend   # ingest FAQ content
+docker compose up app             # chat UI at http://localhost:8501
+```
 
 ## Project Structure
 
@@ -98,6 +112,9 @@ RAG/
 │   ├── ingest.py            # Chunking, embedding, and storage pipeline
 │   ├── retrieval.py         # Query embedding and similarity search
 │   ├── generation.py        # Prompt assembly and OpenAI API integration
+│   ├── rag.py               # Query pipeline: retrieve, then generate
+│   ├── app.py               # Streamlit chat UI
+│   ├── ask.py               # CLI for a single question
 │   ├── requirements.txt
 │   └── .env.example
 ├── PRD.md
@@ -110,6 +127,8 @@ RAG/
 |---|---|
 | `OPENAI_API_KEY` | API key for OpenAI (embeddings and answer generation) |
 | `DATABASE_URL` | PostgreSQL connection string (pgvector-enabled database) |
+| `SIMILARITY_THRESHOLD` | Minimum cosine similarity for a chunk to be used (default `0.3`) |
+| `TOP_K` | Max chunks retrieved per question (default `5`) |
 
 ## Status
 

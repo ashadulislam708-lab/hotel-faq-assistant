@@ -82,21 +82,26 @@ psql -d your_database -c "CREATE EXTENSION IF NOT EXISTS vector;"
 python ingest.py
 ```
 
-Ask a question:
+Ask a question from the command line:
 
 ```bash
-python ask.py "What time is check-in?"   # CLI
-streamlit run app.py                      # chat UI at http://localhost:8501
+python ask.py "What time is check-in?"
 ```
 
-With Docker:
+With Docker (backend and frontend have separate compose files):
 
 ```bash
+# Backend: database + REST API on http://localhost:8000
 cd backend
-docker compose up -d db
-docker compose run --rm backend   # ingest FAQ content
-docker compose up app             # chat UI at http://localhost:8501
+docker compose up -d db api
+docker compose run --rm ingest     # load FAQ content into pgvector
+
+# Frontend: React chat UI on http://localhost:5173
+cd ../frontend
+docker compose up
 ```
+
+API: `POST /api/ask` with `{"question": "..."}` returns `{"answer": "...", "sources": [...]}`; `GET /api/health` for liveness.
 
 ## Project Structure
 
@@ -113,10 +118,11 @@ RAG/
 │   ├── retrieval.py         # Query embedding and similarity search
 │   ├── generation.py        # Prompt assembly and OpenAI API integration
 │   ├── rag.py               # Query pipeline: retrieve, then generate
-│   ├── app.py               # Streamlit chat UI
+│   ├── api.py               # FastAPI REST API
 │   ├── ask.py               # CLI for a single question
 │   ├── requirements.txt
 │   └── .env.example
+├── frontend/               # React (Vite) chat UI
 ├── PRD.md
 └── README.md
 ```
@@ -128,6 +134,7 @@ RAG/
 | `OPENAI_API_KEY` | API key for OpenAI (embeddings and answer generation) |
 | `DATABASE_URL` | PostgreSQL connection string (pgvector-enabled database) |
 | `SIMILARITY_THRESHOLD` | Minimum cosine similarity for a chunk to be used (default `0.3`) |
+| `CORS_ORIGINS` | Comma-separated origins allowed to call the API (default `http://localhost:5173`) |
 | `TOP_K` | Max chunks retrieved per question (default `5`) |
 
 ## Status

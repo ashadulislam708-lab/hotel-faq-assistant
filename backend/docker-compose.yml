@@ -16,9 +16,9 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  ingest:
     build: .
-    container_name: hotel-faq-backend
+    container_name: hotel-faq-ingest
     env_file:
       - ./.env
     environment:
@@ -30,16 +30,16 @@ services:
     volumes:
       - .:/app
 
-  app:
+  api:
     build: .
-    container_name: hotel-faq-app
+    container_name: hotel-faq-api
     env_file:
       - ./.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    command: streamlit run app.py --server.address=0.0.0.0
+    command: uvicorn api:app --host 0.0.0.0 --port 8000
     ports:
-      - "8501:8501"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy

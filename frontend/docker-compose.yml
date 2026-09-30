@@ -1,0 +1,13 @@
+services:
+  frontend:
+    build: .
+    container_name: hotel-faq-frontend
+    env_file:
+      - ./.env
+    environment:
+      PORT: ${FRONTEND_PORT}
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    volumes:
+      - .:/app
+      - /app/node_modules

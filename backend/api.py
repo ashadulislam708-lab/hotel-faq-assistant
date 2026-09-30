@@ -2,19 +2,28 @@
 
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from config import require_config
+from db import init_schema
 from rag import answer_question
 
 logger = logging.getLogger(__name__)
 
 require_config("OPENAI_API_KEY", "DATABASE_URL")
 
-app = FastAPI(title="Hotel FAQ Assistant")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Ensure pgvector and the schema exist even if the API starts before ingestion.
+    init_schema()
+    yield
+
+
+app = FastAPI(title="Hotel FAQ Assistant", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(","),

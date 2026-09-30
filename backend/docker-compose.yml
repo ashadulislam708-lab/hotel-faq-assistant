@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     ports:
       - "${POSTGRES_PORT}:5432"
     healthcheck:

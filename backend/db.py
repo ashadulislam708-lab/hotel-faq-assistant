@@ -53,7 +53,26 @@ def init_schema():
                 ON faq_chunks USING hnsw (embedding vector_cosine_ops);
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS ingestion_state (
+                    id SMALLINT PRIMARY KEY DEFAULT 1,
+                    content_hash TEXT NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    CHECK (id = 1)
+                );
+                """
+            )
         conn.commit()
+
+
+def get_content_hash() -> str | None:
+    """Return the content hash stored from the last successful ingestion, or None."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT content_hash FROM ingestion_state WHERE id = 1;")
+            row = cur.fetchone()
+    return row[0] if row else None
 
 
 def insert_chunk(text: str, embedding: list[float], metadata: dict | None = None):
@@ -68,12 +87,12 @@ def insert_chunk(text: str, embedding: list[float], metadata: dict | None = None
         conn.commit()
 
 
-def replace_all_chunks(chunks: list[dict]):
+def replace_all_chunks(chunks: list[dict], content_hash: str):
     """Atomically replace the entire faq_chunks table with a fresh set of chunks.
 
     Each chunk dict must have 'text', 'embedding', and optionally 'question'/'category'.
-    Truncate and re-insert happen in a single transaction, so a failure leaves the
-    previous contents intact instead of an empty table.
+    Truncate, re-insert, and recording content_hash all happen in a single transaction,
+    so a failure leaves the previous contents (and hash) intact instead of going out of sync.
     """
     rows = [
         (chunk["text"], chunk["embedding"], chunk.get("question"), chunk.get("category"))
@@ -86,6 +105,13 @@ def replace_all_chunks(chunks: list[dict]):
                 cur,
                 "INSERT INTO faq_chunks (text, embedding, question, category) VALUES %s",
                 rows,
+            )
+            cur.execute(
+                """
+                INSERT INTO ingestion_state (id, content_hash) VALUES (1, %s)
+                ON CONFLICT (id) DO UPDATE SET content_hash = EXCLUDED.content_hash, updated_at = now();
+                """,
+                (content_hash,),
             )
         conn.commit()
 

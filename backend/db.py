@@ -117,5 +117,23 @@ def replace_all_chunks(chunks: list[dict], content_hash: str):
 
 
 def search_similar(embedding: list[float], k: int = 5):
-    """Return the top-k chunks most similar to the given embedding (cosine similarity)."""
-    raise NotImplementedError
+    """Return the top-k chunks most similar to the given embedding (cosine similarity).
+
+    Each result is a dict with 'text', 'question', 'category', and 'similarity' (0-1, higher is closer).
+    """
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT text, question, category, 1 - (embedding <=> %s::vector) AS similarity
+                FROM faq_chunks
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s;
+                """,
+                (embedding, embedding, k),
+            )
+            rows = cur.fetchall()
+    return [
+        {"text": text, "question": question, "category": category, "similarity": float(similarity)}
+        for text, question, category, similarity in rows
+    ]

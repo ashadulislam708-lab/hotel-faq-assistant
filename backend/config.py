@@ -8,6 +8,9 @@ load_dotenv()
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 DATABASE_URL = os.environ.get("DATABASE_URL")
+# Minimum cosine similarity (0-1) for a chunk to count as relevant to a question.
+SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.3"))
+TOP_K = int(os.environ.get("TOP_K", "5"))
 
 
 def require_config(*names: str):

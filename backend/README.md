@@ -21,7 +21,7 @@ docker compose run --rm ingest
 Starts the database and the API in the background (`-d`). The `ingest` service is not started.
 
 - **db** — Postgres with pgvector. On the first boot it enables the `vector` extension. Data is kept in the `pgdata` Docker volume, so it survives restarts.
-- **api** — FastAPI served by uvicorn on http://localhost:8000. It waits for the database to be healthy and creates the tables on startup. It only reads data; it never ingests.
+- **api** — FastAPI served by uvicorn on http://localhost:`API_PORT` (set in `.env`, default 8000). It waits for the database to be healthy and creates the tables on startup. It only reads data; it never ingests.
 
 ### `docker compose run --rm ingest`
 
@@ -47,9 +47,9 @@ docker compose run --rm ingest python ingest.py --force
 ## Try it
 
 ```bash
-curl http://localhost:8000/api/health
+curl http://localhost:${API_PORT:-8000}/api/health
 
-curl -X POST http://localhost:8000/api/ask \
+curl -X POST http://localhost:${API_PORT:-8000}/api/ask \
   -H 'Content-Type: application/json' \
   -d '{"question": "What time is check-in?"}'
 ```

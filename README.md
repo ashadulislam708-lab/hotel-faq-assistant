@@ -88,17 +88,29 @@ Ask a question from the command line:
 python ask.py "What time is check-in?"
 ```
 
-With Docker (backend and frontend have separate compose files):
+## Running with Docker
+
+Backend and frontend have separate compose files. Run backend commands from `backend/` and frontend commands from `frontend/`.
 
 ```bash
-# Backend: database + REST API on http://localhost:8000
-cd backend
-docker compose up -d db api
-docker compose run --rm ingest     # load FAQ content into pgvector
+# Backend (from backend/)
 
-# Frontend: React chat UI on http://localhost:5173
-cd ../frontend
-docker compose up
+# 1. Ingest data (load FAQ content into pgvector)
+docker compose run --rm ingest
+
+# 2. Run the API only (http://localhost:8000)
+docker compose up api
+
+# 3. Run the database only
+docker compose up db
+
+# 4. Run the database and API together
+docker compose up db api
+
+# Frontend (from frontend/)
+
+# 5. Run the React chat UI (http://localhost:5173)
+docker compose up --build
 ```
 
 API: `POST /api/ask` with `{"question": "..."}` returns `{"answer": "...", "sources": [...]}`; `GET /api/health` for liveness.
